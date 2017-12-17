@@ -2,18 +2,20 @@ enchant();
 
 /* 画面中央表示の関数 */
 var moveStageToCenter = function(core) {
- var stagePos = {
-  top: (window.innerHeight - (core.height * core.scale)) / 2,
-  left: (window.innerWidth - (core.width * core.scale)) / 2,
- };
- var stage = document.getElementById('enchant-stage');
- stage.style.position = 'absolute';
- stage.style.top = stagePos.top + 'px';
- stage.style.left = stagePos.left + 'px';
- core._pageX = stagePos.left;
- core._pageY = stagePos.top;
+	 var stagePos = {
+	  	top: (window.innerHeight - (core.height * core.scale)) / 2,
+	 	left: (window.innerWidth - (core.width * core.scale)) / 2,
+	 };
+	 var stage = document.getElementById('enchant-stage');
+	 stage.style.position = 'absolute';
+	 stage.style.top = stagePos.top + 'px';
+	 stage.style.left = stagePos.left + 'px';
+	 core._pageX = stagePos.left;
+	 core._pageY = stagePos.top;
 };
 
+
+/* メイン関数 */
 window.onload = function(){
 	var core = new Core(620, 420);
 	core.preload('./image/chara1.png');
@@ -25,12 +27,13 @@ window.onload = function(){
 		var socket = io.connect();
 		var myID = 0;
 
+
 		/* メニューシーンを生成する関数 */
 		var MenuScene = function(){
 			var scene = new Scene();
 			var id_message = new Label();
-			var info_message = [null, null, null, null, null];
-			var add_info = "";
+			var info_message = [null, null, null, null, null];		//メッセージログ。直近5個まで表示
+			var add_info = "";		//info_messageに追加する文字列
 
 			scene.backgroundColor = "rgb(0, 200, 250)";	//sceneの背景色の設定
 
@@ -51,20 +54,21 @@ window.onload = function(){
 				scene.addChild(id_message);
 			});
 
-
+			/* 他のプレイヤーが参加したのを感知 */
 			socket.on('player enter', function(data){
-				add_info = "Player" + data + "が参加しました";
+				add_info = "Player" + data + "が参加しました";		//ログを追加
 			});
 
+			/* 他のプレイヤーの切断を感知 */
 			socket.on('disconnect player', function(data){
 				if(data < myID){
-					myID--;
+					myID--;		//切断したプレイヤーのidが自分より小さかった時セットしなおす
 					socket.emit('change id', myID);
 				}
-				add_info = "Player" + data + "が退出しました";
+				add_info = "Player" + data + "が退出しました";		//ログを追加
 			});
 
-
+			/* フレームごとに行う */
 			scene.addEventListener(Event.ENTER_FRAME, function(){
 				if(add_info != ""){
 					for(var i=1; i<info_message.length; i++){
@@ -77,8 +81,13 @@ window.onload = function(){
 					}
 				}
 
-			})
-			
+			});
+
+			/*	
+			socket.on('start game', function(){
+				core.replaceScene(GameScene());
+			});
+			*/
 
 			return scene;
 		};
@@ -88,7 +97,9 @@ window.onload = function(){
 		var GameScene = function(){
 			var scene = new Scene();
 
-			
+			scene.backgroundColor = "rgb(50, 200, 50)";	//sceneの背景色の設定			
+
+			return scene;
 		};
 
 		core.replaceScene(MenuScene());
