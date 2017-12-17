@@ -16,10 +16,21 @@ http.listen(PORT, () => {
 	console.log(`listening on *:${PORT}`);
 });
 
-
-id = 0;
+var id = 0;
+var userHash = {};
 io.sockets.on('connection', function(socket){
 	id++;
-	console.log('connected : player' + id);
-	socket.emit('hello', id);  //引数のsocket only にemit
+	userHash[socket.id] = id;
+	socket.emit('setID', id);  //引数のsocket only にemit
+	socket.broadcast.emit('player enter', id);
+	socket.on('change id', function(data){
+		socket.emit('setID', data);
+		userHash[socket.id] = data;
+	});
+
+	socket.on('disconnect', function(){
+		io.sockets.emit('disconnect player', userHash[socket.id]);
+		userHash[socket.id] = null;
+		id--;
+	});
 });
