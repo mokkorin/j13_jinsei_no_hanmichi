@@ -1,5 +1,40 @@
 enchant();
 
+const WIDTH = 620;
+const HEIGHT = 420;
+
+const PLUS_MASU = 0;
+const MINUS_MASU = 1;
+const ITEM_MASU = 2;
+const NORMAL_MASU = 3;
+
+const MASU_MAX = 20;
+
+var core = null;
+
+var Test = Class.create({
+	initialize : function(){
+		this.x = 0;
+		this.next = null;
+	},
+	writelog : function(){
+		console.log(this.x);
+	}
+});
+
+var Square = Class.create(Sprite, {
+	initialize : function(x, y, type){
+		Sprite.call(this, 32, 32);
+		this.image = core.assets['./image/masu.png'];
+		this.x = x;
+		this.y = y;
+		this.frame = type;
+		this.next = null;
+	}
+
+});
+
+
 /* 画面中央表示の関数 */
 var moveStageToCenter = function(core) {
 	 var stagePos = {
@@ -14,10 +49,27 @@ var moveStageToCenter = function(core) {
 	 core._pageY = stagePos.top;
 };
 
+/*
+var MapCreate = function(masu){
+	var p = masu.next;
+	var mx = 0;
+	var my = 0;
+	for(var i=1; i<MASU_MAX; i++){
+		mx = Math.cos(i * (360/MASU_MAX) * (Math.PI / 180)) + masu.x;
+		my = Math.sin(i * (360/MASU_MAX) * (Math.PI / 180)) + masu.y;
+		p = new Square(mx, my, 0);
+		p = p.next;
+	}
+
+}
+*/
+
+
 
 /* メイン関数 */
 window.onload = function(){
-	var core = new Core(620, 420);
+	core = new Core(WIDTH, HEIGHT);
+	core.preload('./image/masu.png');
 	core.preload('./image/chara1.png');
 
 	core.onload = function(){
@@ -41,7 +93,7 @@ window.onload = function(){
 				info_message[i] = new Label(' ');
 				info_message[i].font = '20px Arial';
 				info_message[i].x = 50;
-				info_message[i].y = (core.height/2) + (info_message[i]._boundHeight*i);
+				info_message[i].y = (HEIGHT/2) + (info_message[i]._boundHeight*i);
 			}
 
 			
@@ -49,8 +101,8 @@ window.onload = function(){
 				myID = data;
 				id_message.text = "あなたはPlayer" + myID + "です";	
 				id_message.font = '15px Arial';
-				id_message.x = core.width - (50 + id_message._boundWidth);
-				id_message.y = core.height-50;
+				id_message.x = WIDTH - (50 + id_message._boundWidth);
+				id_message.y = HEIGHT - 50;
 				scene.addChild(id_message);
 			});
 
@@ -96,13 +148,26 @@ window.onload = function(){
 
 		var GameScene = function(){
 			var scene = new Scene();
+			var a = new Test();
+			var b = null;
+			
+			//var map = new Square(WIDTH/2, HEIGHT/2, 1);
 
-			scene.backgroundColor = "rgb(50, 200, 50)";	//sceneの背景色の設定			
+			scene.backgroundColor = "rgb(50, 200, 200)";
 
+			//MapCreate(map);
+
+			/*
+			scene.addChild(map);
+			for(var p = map.next; (p != map) && (p != null); p = p.next){
+				scene.addChild(p);
+			}
+			*/
+			
 			return scene;
 		};
 
-		core.replaceScene(MenuScene());
+		core.replaceScene(GameScene());
 
 		
 	};
