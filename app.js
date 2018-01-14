@@ -2,6 +2,9 @@ var express = require('express');
 var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
+
+const xlsx = require('xlsx');
+
 var PORT = process.env.PORT || 3000;
 
 app.use('/js', express.static(__dirname + '/js'));

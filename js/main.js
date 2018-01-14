@@ -23,15 +23,23 @@ var Test = Class.create({
 });
 
 var Square = Class.create(Sprite, {
-	initialize : function(x, y, type){
+	initialize : function(){
 		Sprite.call(this, 32, 32);
 		this.image = core.assets['./image/masu.png'];
+		this.x = 0;
+		this.y = 0;
+		this.frame = 0;
+		this.next = null;
+	},
+	create : function(x, y, type){
 		this.x = x;
 		this.y = y;
 		this.frame = type;
-		this.next = null;
+	},
+	output : function(){
+		console.log('x = ' + this.x);
+		console.log('y = ' + this.y);
 	}
-
 });
 
 
@@ -49,21 +57,42 @@ var moveStageToCenter = function(core) {
 	 core._pageY = stagePos.top;
 };
 
-/*
-var MapCreate = function(masu){
-	var p = masu.next;
+/* マップ生成関数 */
+var MapCreate = function(masu, centerX, centerY)
+{
+	var p = masu;
+	var q = null;
 	var mx = 0;
 	var my = 0;
+	var rx = 150;
+	var ry = 150;
+
+	p.create(rx * Math.cos(0) + centerX, ry * Math.sin(0) + centerY, 1);
 	for(var i=1; i<MASU_MAX; i++){
-		mx = Math.cos(i * (360/MASU_MAX) * (Math.PI / 180)) + masu.x;
-		my = Math.sin(i * (360/MASU_MAX) * (Math.PI / 180)) + masu.y;
-		p = new Square(mx, my, 0);
+		mx = rx * Math.cos((Math.PI/180) * i *(360/MASU_MAX)) + centerX;
+		my = ry * Math.sin((Math.PI/180) * i * (360/MASU_MAX)) + centerY;
+		q = new Square();
+		q.create(mx, my, 1);
+		p.next = q;
 		p = p.next;
 	}
+	p.next = masu;
 
 }
-*/
 
+/* マップ表示関数 */
+var MapOutput = function(map, scene)
+{
+	var b = null;
+	//map.output();
+	scene.addChild(map);
+	b = map.next;
+	for(var i=0; i<MASU_MAX; i++){
+		//b.output();
+		scene.addChild(b);
+		b = b.next;
+	}
+}
 
 
 /* メイン関数 */
@@ -145,25 +174,19 @@ window.onload = function(){
 		};
 
 
-
 		var GameScene = function(){
 			var scene = new Scene();
-			var a = new Test();
-			var b = null;
 			
-			//var map = new Square(WIDTH/2, HEIGHT/2, 1);
+			var map = new Square();
 
 			scene.backgroundColor = "rgb(50, 200, 200)";
 
-			//MapCreate(map);
+			MapCreate(map, WIDTH/2, HEIGHT/2);
 
-			/*
-			scene.addChild(map);
-			for(var p = map.next; (p != map) && (p != null); p = p.next){
-				scene.addChild(p);
-			}
-			*/
-			
+			MapOutput(map, scene);
+	
+			console.log('unko');
+
 			return scene;
 		};
 
