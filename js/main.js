@@ -1,5 +1,6 @@
 enchant();
 
+/* 定数群 */
 const WIDTH = 620;
 const HEIGHT = 420;
 
@@ -8,7 +9,9 @@ const MINUS_MASU = 1;
 const ITEM_MASU = 2;
 const NORMAL_MASU = 3;
 
-const MASU_MAX = 20;
+const MASU_MAX = 12;
+
+
 
 var core = null;
 
@@ -19,6 +22,9 @@ var Test = Class.create({
 	},
 	writelog : function(){
 		console.log(this.x);
+	},
+	test : function(){
+		this.x = this.next.x;
 	}
 });
 
@@ -64,8 +70,8 @@ var MapCreate = function(masu, centerX, centerY)
 	var q = null;
 	var mx = 0;
 	var my = 0;
-	var rx = 150;
-	var ry = 150;
+	var rx = 200;
+	var ry = 100;
 
 	p.create(rx * Math.cos(0) + centerX, ry * Math.sin(0) + centerY, 1);
 	for(var i=1; i<MASU_MAX; i++){
@@ -83,10 +89,7 @@ var MapCreate = function(masu, centerX, centerY)
 /* マップ表示関数 */
 var MapOutput = function(map, scene)
 {
-	var b = null;
-	//map.output();
-	scene.addChild(map);
-	b = map.next;
+	var b = map;
 	for(var i=0; i<MASU_MAX; i++){
 		//b.output();
 		scene.addChild(b);
@@ -176,14 +179,21 @@ window.onload = function(){
 
 		var GameScene = function(){
 			var scene = new Scene();
-			
+			var a = new Test();
+			var b = new Test();
 			var map = new Square();
 
 			scene.backgroundColor = "rgb(50, 200, 200)";
 
-			MapCreate(map, WIDTH/2, HEIGHT/2);
-
+			MapCreate(map, WIDTH/2, HEIGHT/2 - 50);
 			MapOutput(map, scene);
+
+			a.x = 10;
+			b.next = a;
+			b.test();
+			a.writelog();
+			b.writelog();
+
 	
 			console.log('unko');
 

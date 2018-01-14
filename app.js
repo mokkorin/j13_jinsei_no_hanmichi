@@ -1,22 +1,8 @@
-var express = require('express');
-var app = express();
-var http = require('http').Server(app);
-var io = require('socket.io')(http);
+const WIDTH = 620;
+const HEIGHT = 420;
 
-const xlsx = require('xlsx');
 
-var PORT = process.env.PORT || 3000;
-
-app.use('/js', express.static(__dirname + '/js'));
-app.use('/image', express.static(__dirname + '/image'));
-
-app.get(`/`, (req, res) => {
-  	res.sendFile(__dirname + '/index.html');
-});
-
-http.listen(PORT, () => {
-	console.log(`listening on *:${PORT}`);
-});
+/*------関数群------*/
 
 /* 配列の中身をシャッフルする関数 */
 function shuffle(array)
@@ -33,6 +19,27 @@ function shuffle(array)
   	return array;
 }
 
+/* ------ここからメイン------- */
+var express = require('express');
+var app = express();
+var http = require('http').Server(app);
+var io = require('socket.io')(http);
+
+const xlsx = require('xlsx');
+let db = xlsx.readFile('db.xlsx');
+
+var PORT = process.env.PORT || 3000;
+
+app.use('/js', express.static(__dirname + '/js'));
+app.use('/image', express.static(__dirname + '/image'));
+
+app.get(`/`, (req, res) => {
+  	res.sendFile(__dirname + '/index.html');
+});
+
+http.listen(PORT, () => {
+	console.log(`listening on *:${PORT}`);
+});
 
 var id = 0;		//アクセス数
 var userHash = {};		//アクセスしているユーザのハッシュ
