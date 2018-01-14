@@ -48,7 +48,6 @@ var Square = Class.create(Sprite, {
 	}
 });
 
-
 /* 画面中央表示の関数 */
 var moveStageToCenter = function(core) {
 	 var stagePos = {
@@ -200,7 +199,7 @@ window.onload = function(){
 			return scene;
 		};
 
-		core.replaceScene(GameScene());
+		core.replaceScene(MenuScene());
 
 		
 	};
