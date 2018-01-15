@@ -199,7 +199,7 @@ window.onload = function(){
 			return scene;
 		};
 
-		core.replaceScene(MenuScene());
+		core.replaceScene(GameScene());
 
 		
 	};
