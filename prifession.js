@@ -1,5 +1,0 @@
-function job(inteligence)
-{
-    
-    
-}
