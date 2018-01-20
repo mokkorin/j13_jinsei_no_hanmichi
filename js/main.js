@@ -178,22 +178,20 @@ window.onload = function(){
 
 		var GameScene = function(){
 			var scene = new Scene();
-			var a = new Test();
-			var b = new Test();
+			var a = new Sprite(32, 32);
 			var map = new Square();
 
 			scene.backgroundColor = "rgb(50, 200, 200)";
 
+			a.image = core.assets['./image/masu.png'];
+			a.x = 0;
+			a.y = 0;
+			a.frame = 0;
+			scene.addChild(a);
+
 			MapCreate(map, WIDTH/2, HEIGHT/2 - 50);
 			MapOutput(map, scene);
 
-			a.x = 10;
-			b.next = a;
-			b.test();
-			a.writelog();
-			b.writelog();
-
-	
 			console.log('unko');
 
 			return scene;
