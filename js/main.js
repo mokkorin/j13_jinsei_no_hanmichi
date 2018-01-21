@@ -61,7 +61,6 @@ var moveStageToCenter = function(core) {
 	 core._pageX = stagePos.left;
 	 core._pageY = stagePos.top;
 };
-
 /* マップ生成関数 */
 var MapCreate = function(masu, centerX, centerY)
 {
@@ -84,7 +83,6 @@ var MapCreate = function(masu, centerX, centerY)
 	p.next = masu;
 
 }
-
 /* マップ表示関数 */
 var MapOutput = function(map, scene)
 {
@@ -95,6 +93,8 @@ var MapOutput = function(map, scene)
 		b = b.next;
 	}
 }
+/* プレイヤーセット関数 */
+
 
 
 /* メイン関数 */
@@ -178,16 +178,10 @@ window.onload = function(){
 
 		var GameScene = function(){
 			var scene = new Scene();
-			var a = new Sprite(32, 32);
 			var map = new Square();
+			var Players = [null, null, null, null];
 
 			scene.backgroundColor = "rgb(50, 200, 200)";
-
-			a.image = core.assets['./image/masu.png'];
-			a.x = 0;
-			a.y = 0;
-			a.frame = 0;
-			scene.addChild(a);
 
 			MapCreate(map, WIDTH/2, HEIGHT/2 - 50);
 			MapOutput(map, scene);
