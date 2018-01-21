@@ -9,7 +9,7 @@ const MINUS_MASU = 1;
 const ITEM_MASU = 2;
 const NORMAL_MASU = 3;
 
-const MASU_MAX = 12;
+const MASU_MAX = 20;
 
 var core = null;
 
@@ -62,21 +62,21 @@ var moveStageToCenter = function(core) {
 };
 
 /* マップ生成関数 */
-var MapCreate = function(masu, centerX, centerY)
+var MapCreate = function(masu, centerX, centerY, data)
 {
 	var p = masu;
 	var q = null;
 	var mx = 0;
 	var my = 0;
 	var rx = 200;
-	var ry = 100;
+	var ry = 130;
 
-	p.create(rx * Math.cos(0) + centerX, ry * Math.sin(0) + centerY, 1);
+	p.create(rx * Math.cos(0) + centerX, ry * Math.sin(0) + centerY, data[0]);
 	for(var i=1; i<MASU_MAX; i++){
 		mx = rx * Math.cos((Math.PI/180) * i *(360/MASU_MAX)) + centerX;
 		my = ry * Math.sin((Math.PI/180) * i * (360/MASU_MAX)) + centerY;
 		q = new Square();
-		q.create(mx, my, 1);
+		q.create(mx, my, data[i]);
 		p.next = q;
 		p = p.next;
 	}
@@ -109,6 +109,7 @@ window.onload = function(){
 		var socket = io.connect();
 		var myID = 0;
 		var member_num = 0;
+		var member_limit = 2;		//一緒に遊べる人数
 
 		/* メニューシーンを生成する関数 */
 		var MenuScene = function(){
@@ -123,6 +124,11 @@ window.onload = function(){
 			start_button.image = core.assets['./image/start.png'];
 			start_button.x = WIDTH/2 - 100;
 			start_button.y = HEIGHT - 100;
+			/* スタートボタンにタッチイベントを付加 */
+			start_button.ontouchstart = function(){
+				if(member_num < member_limit)	return;
+				console.log(member_num);
+			};
 
 			for(var i=0; i<info_message.length; i++){
 				info_message[i] = new Label(' ');
@@ -131,6 +137,10 @@ window.onload = function(){
 				info_message[i].y = (HEIGHT/2) + (info_message[i]._boundHeight*i);
 			}
 
+			socket.on('initialize', function(data){
+				member_num = data;
+				myID = data;
+			});
 			
 			socket.on('setID', function(data){
 				myID = data;
@@ -144,7 +154,7 @@ window.onload = function(){
 			/* 他のプレイヤーが参加したのを感知 */
 			socket.on('player enter', function(data){
 				add_info = "Player" + data + "が参加しました";		//ログを追加
-				//member_num++;
+				member_num++;
 			});
 
 			/* 他のプレイヤーの切断を感知 */
@@ -154,7 +164,7 @@ window.onload = function(){
 					socket.emit('change id', myID);
 				}
 				add_info = "Player" + data + "が退出しました";		//ログを追加
-				//member_num--;
+				member_num--;
 			});
 
 			/* フレームごとに行う */
@@ -169,16 +179,17 @@ window.onload = function(){
 						scene.addChild(info_message[i]);
 					}
 				}
-				/*
-				if(myID == 1){
-					if(member_num >= 2){
-						start_button.opacity = 1.0;
+				
+				if(myID == 1){						//Player1であればスタートボタンが表示される
+					if(member_num >= member_limit){			
+						start_button.opacity = 1.0;	//規定人数以上であればボタンがアクティブになる
+
 					}else{
 						start_button.opacity = 0.5;
 					}
 					scene.addChild(start_button);
 				}
-				*/
+				
 			});
 
 
@@ -196,13 +207,15 @@ window.onload = function(){
 			var scene = new Scene();
 			var map = new Square();
 			var Players = [null, null, null, null];
-
+			var t = 0;
 			scene.backgroundColor = "rgb(50, 200, 200)";
+			socket.emit('game initialize');				//シーンを読み込んだらサーバ側にgame initializeを送信
+			socket.on('map data', function(data){		//map data を読み込んだらマップを作成し表示する
+				MapCreate(map, WIDTH/2-10, HEIGHT/2-40, data);
+				MapOutput(map, scene);
+			});
 
-			MapCreate(map, WIDTH/2, HEIGHT/2 - 50);
-			MapOutput(map, scene);
 
-			console.log('unko');
 
 			return scene;
 		};

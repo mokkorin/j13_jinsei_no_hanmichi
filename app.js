@@ -1,3 +1,11 @@
+const MASU_MAX = 20;	//ここを変えるならmain.js側も変えるべし
+
+const PLUS_MASU = 0;
+const MINUS_MASU = 1;
+const ITEM_MASU = 2;
+const EVENT_MASU = 3;
+const NORMAL_MASU = 4;
+
 /*------関数群------*/
 
 /* 配列の中身をシャッフルする関数 */
@@ -13,6 +21,28 @@ function shuffle(array)
   	}
 
   	return array;
+}
+
+/* マップのデータを生成する関数 */
+function mapDataCreate(map)
+{
+	var ratios = new Array(5);	//マスの種類の出現割合を示す配列
+	ratios[PLUS_MASU] = 10;		//プラスマスの割合
+	ratios[MINUS_MASU] = 5;		//マイナスマスの割合
+	ratios[ITEM_MASU] = 5;		//アイテムマスの割合
+	ratios[EVENT_MASU] = 0;		//イベントマスの割合
+	ratios[NORMAL_MASU] = 0;	//ノーマルマスの割合
+
+	var type;
+	var i = 0;
+	while(i < map.length){
+		type = Math.floor(Math.random()*5);
+		if(ratios[type] != 0){
+			map[i] = type;
+			ratios[type]--;
+			i++;
+		}
+	}
 }
 
 /* ------ここからメイン------- */
@@ -40,12 +70,19 @@ http.listen(PORT, () => {
 var id = 0;		//アクセス数
 var userHash = {};		//アクセスしているユーザのハッシュ
 var order = {};		//すごろくの順番
+var mapdata = new Array(MASU_MAX);	//map生成のデータ
+
+mapDataCreate(mapdata);				//map生成
+
+for (var i = 0; i < mapdata.length; i++) {
+	console.log(mapdata[i])
+}
 
 /* アクセスを感知したら動く */
 io.sockets.on('connection', function(socket){
 	id++;
 	userHash[socket.id] = id;
-	socket.emit('setID', id);  //引数のsocket only に送信
+	socket.emit('initialize', id);  //引数のsocket only に送信
 	socket.broadcast.emit('player enter', id);	//他のプレイヤーが入ってきたことを通知
 
 	/* change id を受信したら対応するidを変更し、結果を送る */
@@ -54,12 +91,11 @@ io.sockets.on('connection', function(socket){
 		userHash[socket.id] = data;
 	});
 
-	/*
-	if(id > 1){
-		io.sockets.emit('start game');
-	}
-	*/
-	
+	/* クライアント側からgame startを受けっとったら実行される */
+	socket.on('game initialize', function(){
+		io.sockets.emit('map data', mapdata);
+	});
+
 	/* 切断を感知したら全員に切断を通知する */
 	socket.on('disconnect', function(){
 		io.sockets.emit('disconnect player', userHash[socket.id]);
