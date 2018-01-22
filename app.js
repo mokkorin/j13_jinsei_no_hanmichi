@@ -11,38 +11,38 @@ const NORMAL_MASU = 4;
 /* 配列の中身をシャッフルする関数 */
 function shuffle(array)
 {
-	var n = array.length, t, i;
+    var n = array.length, t, i;
 
-  	while (n) {
+    while (n) {
     	i = Math.floor(Math.random() * n--);
     	t = array[n];
     	array[n] = array[i];
     	array[i] = t;
-  	}
+    }
 
-  	return array;
+    return array;
 }
 
 /* マップのデータを生成する関数 */
 function mapDataCreate(map)
 {
-	var ratios = new Array(5);	//マスの種類の出現割合を示す配列
-	ratios[PLUS_MASU] = 10;		//プラスマスの割合
-	ratios[MINUS_MASU] = 5;		//マイナスマスの割合
-	ratios[ITEM_MASU] = 5;		//アイテムマスの割合
-	ratios[EVENT_MASU] = 0;		//イベントマスの割合
-	ratios[NORMAL_MASU] = 0;	//ノーマルマスの割合
+    var ratios = new Array(5);	//マスの種類の出現割合を示す配列
+    ratios[PLUS_MASU] = 10;		//プラスマスの割合
+    ratios[MINUS_MASU] = 5;		//マイナスマスの割合
+    ratios[ITEM_MASU] = 5;		//アイテムマスの割合
+    ratios[EVENT_MASU] = 0;		//イベントマスの割合
+    ratios[NORMAL_MASU] = 0;	//ノーマルマスの割合
 
-	var type;
-	var i = 0;
-	while(i < map.length){
-		type = Math.floor(Math.random()*5);
-		if(ratios[type] != 0){
-			map[i] = type;
-			ratios[type]--;
-			i++;
-		}
+    var type;
+    var i = 0;
+    while(i < map.length){
+	type = Math.floor(Math.random()*5);
+	if(ratios[type] != 0){
+	    map[i] = type;
+	    ratios[type]--;
+	    i++;
 	}
+    }
 }
 
 /* ------ここからメイン------- */
@@ -60,46 +60,48 @@ app.use('/js', express.static(__dirname + '/js'));
 app.use('/image', express.static(__dirname + '/image'));
 
 app.get(`/`, (req, res) => {
-  	res.sendFile(__dirname + '/index.html');
+    res.sendFile(__dirname + '/index.html');
 });
 
 http.listen(PORT, () => {
-	console.log(`listening on *:${PORT}`);
+    console.log(`listening on *:${PORT}`);
 });
 
 var id = 0;		//アクセス数
 var userHash = {};		//アクセスしているユーザのハッシュ
-var order = {};		//すごろくの順番
+var order = [];	//すごろくの順番
 var mapdata = new Array(MASU_MAX);	//map生成のデータ
 
 mapDataCreate(mapdata);				//map生成
 
-for (var i = 0; i < mapdata.length; i++) {
-	console.log(mapdata[i])
-}
-
 /* アクセスを感知したら動く */
 io.sockets.on('connection', function(socket){
-	id++;
-	userHash[socket.id] = id;
-	socket.emit('initialize', id);  //引数のsocket only に送信
-	socket.broadcast.emit('player enter', id);	//他のプレイヤーが入ってきたことを通知
+    id++;
+    userHash[socket.id] = id;
+    order.push(socket.id);
+    socket.emit('initialize', id);  //引数のsocket only に送信
+    socket.broadcast.emit('player enter', id);	//他のプレイヤーが入ってきたことを通知
 
-	/* change id を受信したら対応するidを変更し、結果を送る */
-	socket.on('change id', function(data){
-		socket.emit('setID', data);
-		userHash[socket.id] = data;
-	});
+    /* change id を受信したら対応するidを変更し、結果を送る */
+    socket.on('change id', function(data){
+	socket.emit('setID', data);
+	userHash[socket.id] = data;
+    });
 
-	/* クライアント側からgame startを受けっとったら実行される */
-	socket.on('game initialize', function(){
-		io.sockets.emit('map data', mapdata);
-	});
+    /* クライアント側からgame initializeを受けとったら実行される */
+    socket.on('game initialize', function(){
+	order = shuffle(order);
+	io.sockets.emit('init', mapdata, id);
+    });
 
-	/* 切断を感知したら全員に切断を通知する */
-	socket.on('disconnect', function(){
-		io.sockets.emit('disconnect player', userHash[socket.id]);
-		userHash[socket.id] = null;
-		id--;
-	});
+    socket.on('ready', function(){
+	io.sockets.emit('start game');
+    });
+    
+    /* 切断を感知したら全員に切断を通知する */
+    socket.on('disconnect', function(){
+	io.sockets.emit('disconnect player', userHash[socket.id]);
+	userHash[socket.id] = null;
+	id--;
+    });
 });
