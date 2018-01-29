@@ -68,6 +68,7 @@ http.listen(PORT, () => {
 });
 
 var id = 0;		//アクセス数
+var turn = 0;           //ターン数
 var userHash = {};		//アクセスしているユーザのハッシュ
 var order = [];	//すごろくの順番
 var mapdata = new Array(MASU_MAX);	//map生成のデータ

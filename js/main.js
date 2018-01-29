@@ -39,9 +39,9 @@ var Player = Class.create(Sprite,{
 	/* spriteのやつ */
 	Sprite.call(this, 32, 32);
 	this.image = core.assets['./image/chara1.png'];
-	this.x = (this.place.x - 10) + 3 * PlayerID;
-	this.y = (this.place.y - 10) + 3 * PlayerID;
-	this.flame = 4*PlayerID;
+	this.x = (this.place.x - 10) + 6 * PlayerID;
+	this.y = (this.place.y - 10) + 6 * PlayerID;
+	this.frame = 4*PlayerID;
     },
     player_move : function(value) { // playerを移動させる関数
 	for(var i = 0; i < value; i++){
@@ -230,7 +230,6 @@ window.onload = function(){
 		if(myID == 1){			//Player1であればスタートボタンが表示される
 		    if(member_num >= member_limit){			
 			start_button.opacity = 1.0;	//規定人数以上であればボタンがアクティブになる
-
 		    }else{
 			start_button.opacity = 0.5;
 		    }
@@ -254,6 +253,7 @@ window.onload = function(){
 	    var map = new Square();
 	    var Players = [null, null, null, null];
 	    var t = 0;
+	    var turn = 0;
 	    scene.backgroundColor = "rgb(50, 200, 200)";
 	    socket.emit('game initialize');		//シーンを読み込んだらサーバ側にgame initializeを送信
 	    socket.on('init', function(data, number){		//map data を読み込んだらマップを作成し表示する
@@ -265,8 +265,13 @@ window.onload = function(){
 		player_disp(Players, scene);
 	    });
 	    
-	   
-
+	    /*socket.on('disconnect player', function(data){
+		Players[data-1] = null;
+		scene.parentNode.removeChild(Players[data-1]);
+		player_disp(Players, scene);
+	    });
+	   */
+	    
 	    return scene;
 	};
 
