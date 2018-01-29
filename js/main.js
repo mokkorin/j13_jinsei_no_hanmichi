@@ -28,6 +28,7 @@ var Test = Class.create({
     }
 });
 
+
 var Dice = Class.create(Sprite, {
     initialize : function(){
 	this.x=0;
@@ -105,7 +106,34 @@ var MapOutput = function(map, scene)
 	b = b.next;
     }
 }
-
+//サイコロ関数
+	var Dice = function(){
+	    var dice = [null,null,null];
+	   // var button = new Sprite[];
+	    var speed=1;
+	    var DMAX=1; // サイコロの個数
+	    var Dcount=0;
+	    var start=false;
+	    
+	    if(start==true){
+		if(Dcount>=5){
+		    for(i=0;i<DM;i++){
+			dice[i].num = (1 + Math.floor(Math.random()*7));
+			dice[i].moveTo(WIDTH/2+i*50,HEIGHT/2);
+		    }
+		    Dcount=0;
+		    speed*=0.89;
+		}
+		Dcount+=speed;
+	    }
+	    if(Dcount<=0.2){
+		start=false;
+	    }
+	    scene.addEventListener(Event.ENTER_FRAME, function(){
+		start=true;
+	    });
+	    scene.addChild(dice);
+	}
 
 /* メイン関数 */
 window.onload = function(){
@@ -196,7 +224,7 @@ window.onload = function(){
 
 	    MapCreate(map, WIDTH/2, HEIGHT/2 - 50);
 	    MapOutput(map, scene);
-
+	    Dice();
 	    a.x = 10;
 	    b.next = a;
 	    b.test();
@@ -209,18 +237,11 @@ window.onload = function(){
 	    return scene;
 	};
 
+	//core.replaceScene(GameScene());
+	
+
 	core.replaceScene(GameScene());
-	
-	var DiceScene = function(){
-	    var scene = new Scene();
-	    var dice = new Dice();
-	    
-	    dice.num = (1 + Math.floor(Math.random()*7));
-	    dice.moveTo(WIDTH/2,HEIGHT/2);
-	    
-	    return scene;
-	}
-	
     };
+    
     core.start();
 };
