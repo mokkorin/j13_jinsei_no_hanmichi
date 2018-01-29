@@ -95,7 +95,8 @@ io.sockets.on('connection', function(socket){
     });
 
     socket.on('ready', function(){
-	io.sockets.emit('start game');
+	socket.emit('start game');
+	socket.broadcast.emit('start game');
     });
     
     /* 切断を感知したら全員に切断を通知する */
