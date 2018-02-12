@@ -30,29 +30,42 @@ var Test = Class.create({
 /* Playerクラス */
 var Player = Class.create(Sprite,{
     initialize : function(map, PlayerID) { // クラス作成時の初期化処理
-	this.intelligent = 0;
-	this.money = 0; 
-	this.item = new Array(3);
-	this.place = map;
-	this.job = null;
-
-	/* spriteのやつ */
-	Sprite.call(this, 32, 32);
-	this.image = core.assets['./image/chara1.png'];
-	this.x = (this.place.x - 10) + 6 * PlayerID;
-	this.y = (this.place.y - 10) + 6 * PlayerID;
-	this.frame = 4*PlayerID;
+		this.intelligent = 0;
+		this.money = 0; 
+		this.item = new Array(3);
+		this.place = map;
+		this.job = null;
+		this.type = 4*PlayerID;
+		this.time = 0;	//frame処理
+		/* spriteのやつ */
+		Sprite.call(this, 32, 32);
+		this.image = core.assets['./image/chara1.png'];
+		this.x = (this.place.x - 32/2) + (20 * (PlayerID%2));
+		this.y = (this.place.y - 32/2) + (20 * Math.floor(PlayerID/2));
+		this.frame = this.type+1;
     },
     player_move : function(value) { // playerを移動させる関数
-	for(var i = 0; i < value; i++){
-	    this.place = this.place.next;
-	    this.x = this.place.x;
-	    this.y = this.place.y;
-	}
+		for(var i = 0; i < value; i++){
+		    this.place = this.place.next;
+		    this.x = (this.place.x - 32/2) + (20 * (PlayerID%2));
+		    this.y = (this.place.y - 32/2) + (20 * Math.floor(PlayerID/2));
+		}
+    },
+    onenterframe:function(){
+    	this.time++;
+    	if(this.time > 10){
+    		this.time = 0;
+    		if(this.frame+1 > this.type+2){
+    			this.frame = this.type+1;
+    		}else{
+    			this.frame++;
+    		}
+    	}
     },
     player_hoge : function(){
 
     }
+
     // 以下必要な数だけメソッドを記述
 });
 
@@ -138,6 +151,7 @@ window.onload = function(){
     core.preload('./image/masu.png');
     core.preload('./image/chara1.png');
     core.preload('./image/start.png');
+    core.preload('./image/saikoro.png');
 
     core.onload = function(){
 	moveStageToCenter(core);	//画面を中央に表示
@@ -155,6 +169,8 @@ window.onload = function(){
 	    var info_message = [null, null, null, null, null];		//メッセージログ。直近5個まで表示
 	    var add_info = "";		//info_messageに追加する文字列
 	    var start_button = new Sprite(200, 50);
+	    //var db = xlsx.readFile('db.xlsx');
+
 
 	    scene.backgroundColor = "rgb(0, 200, 250)";	//sceneの背景色の設定
 
@@ -163,78 +179,78 @@ window.onload = function(){
 	    start_button.y = HEIGHT - 100;
 	    /* スタートボタンにタッチイベントを付加 */
 	    start_button.ontouchstart = function(){
-		if(member_num < member_limit)	return;
-		socket.emit('ready');
+			if(member_num < member_limit)	return;
+			socket.emit('ready');
 	    };
 
 	    socket.on('start game', function(){
-		core.replaceScene(GameScene());
+			core.replaceScene(GameScene());
 	    });
 
 	    for(var i=0; i<info_message.length; i++){
-		info_message[i] = new Label(' ');
-		info_message[i].font = '15px Arial';
-		info_message[i].x = 50;
-		info_message[i].y = (HEIGHT/2) + (info_message[i]._boundHeight*i);
+			info_message[i] = new Label(' ');
+			info_message[i].font = '15px Arial';
+			info_message[i].x = 50;
+			info_message[i].y = (HEIGHT/2) + (info_message[i]._boundHeight*i);
 	    }
 
 	    socket.on('initialize', function(data){
-		member_num = data;
-		myID = data;
-		id_message.text = "あなたはPlayer" + myID + "です";	
-		id_message.font = '20px Arial';
-		id_message.x = 50;
-		id_message.y = 100;
-		scene.addChild(id_message);
+			member_num = data;
+			myID = data;
+			id_message.text = "あなたはPlayer" + myID + "です";	
+			id_message.font = '20px Arial';
+			id_message.x = 50;
+			id_message.y = 100;
+			scene.addChild(id_message);
 	    });
 	    
 	    socket.on('setID', function(data){
-		myID = data;
-		id_message.text = "あなたはPlayer" + myID + "です";	
-		id_message.font = '20px Arial';
-		id_message.x = 50;
-		id_message.y = 100;
-		scene.addChild(id_message);
+			myID = data;
+			id_message.text = "あなたはPlayer" + myID + "です";	
+			id_message.font = '20px Arial';
+			id_message.x = 50;
+			id_message.y = 100;
+			scene.addChild(id_message);
 	    });
 
 	    /* 他のプレイヤーが参加したのを感知 */
 	    socket.on('player enter', function(data){
-		add_info = "Player" + data + "が参加しました";		//ログを追加
-		member_num++;
+			add_info = "Player" + data + "が参加しました";		//ログを追加
+			member_num++;
 	    });
 
 	    /* 他のプレイヤーの切断を感知 */
 	    socket.on('disconnect player', function(data){
-		if(data < myID){
-		    myID--;		//切断したプレイヤーのidが自分より小さかった時セットしなおす
-		    socket.emit('change id', myID);
-		}
-		add_info = "Player" + data + "が退出しました";		//ログを追加
-		member_num--;
+			if(data < myID){
+			    myID--;		//切断したプレイヤーのidが自分より小さかった時セットしなおす
+			    socket.emit('change id', myID);
+			}
+			add_info = "Player" + data + "が退出しました";		//ログを追加
+			member_num--;
 	    });
 
 	    /* フレームごとに行う */
 	    scene.addEventListener(Event.ENTER_FRAME, function(){
-		if(add_info != ""){
-		    for(var i=1; i<info_message.length; i++){
-			info_message[i-1].text = info_message[i].text;
-		    }
-		    info_message[info_message.length-1].text = add_info;
-		    add_info = "";
-		    for(var i=0; i<info_message.length; i++){
-			scene.addChild(info_message[i]);
-		    }
-		}
-		
-		
-		if(myID == 1){			//Player1であればスタートボタンが表示される
-		    if(member_num >= member_limit){			
-			start_button.opacity = 1.0;	//規定人数以上であればボタンがアクティブになる
-		    }else{
-			start_button.opacity = 0.5;
-		    }
-		    scene.addChild(start_button);
-		}
+			if(add_info != ""){
+			    for(var i=1; i<info_message.length; i++){
+					info_message[i-1].text = info_message[i].text;
+			    }
+			    info_message[info_message.length-1].text = add_info;
+			    add_info = "";
+			    for(var i=0; i<info_message.length; i++){
+					scene.addChild(info_message[i]);
+			    }
+			}
+			
+			
+			if(myID == 1){			//Player1であればスタートボタンが表示される
+			    if(member_num >= member_limit){			
+					start_button.opacity = 1.0;	//規定人数以上であればボタンがアクティブになる
+			    }else{
+					start_button.opacity = 0.5;
+			    }
+			    scene.addChild(start_button);
+			}
 	    });
 	    
 
@@ -251,20 +267,53 @@ window.onload = function(){
 	var GameScene = function(){
 	    var scene = new Scene();
 	    var map = new Square();
+	    var saikoro = new Sprite(200, 64);
 	    var Players = [null, null, null, null];
 	    var t = 0;
 	    var turn = 0;
+	    var now_message = new Label(' ');
+	    var isMyturn = 0;	//自分のターンかどうか
+
+	    now_message.font = '20px 游明朝';
+	    now_message.x = 10;
+	    now_message.y = 10;
+	    scene.addChild(now_message);
+
+	    saikoro.image = core.assets['./image/saikoro.png'];
+	    saikoro.x = WIDTH/2 - 100;
+	    saikoro.y = HEIGHT - 58;
+	    scene.addChild(saikoro);
+
 	    scene.backgroundColor = "rgb(50, 200, 200)";
 	    socket.emit('game initialize');		//シーンを読み込んだらサーバ側にgame initializeを送信
 	    socket.on('init', function(data, number){		//map data を読み込んだらマップを作成し表示する
-		MapCreate(map, WIDTH/2-10, HEIGHT/2-40, data);
-		MapOutput(map, scene);
-		for(var i=0; i<number; i++){
-		    Players[i] = new Player(map, i);
-		}
-		player_disp(Players, scene);
+			MapCreate(map, WIDTH/2-10, HEIGHT/2-40, data);
+			MapOutput(map, scene);
+
+			for(var i=0; i<number; i++){
+			    Players[i] = new Player(map, i);
+			}
+
+			player_disp(Players, scene);
 	    });
 	    
+	    socket.emit('game turn', turn);
+
+	    socket.on('your turn', function(){
+	    	now_message.text = "あなたの番です";
+	    	isMyturn = 1;
+	    });
+
+	    socket.on('other turn', function(num){
+	    	now_message.text = "Player" + num + "の番です";
+	    	isMyturn = 0;
+	    });
+
+	    //サイコロのタッチイベント
+	    saikoro.ontouchstart = function(){
+	    	if(isMyturn == 0) break;
+
+	    };
 	    /*socket.on('disconnect player', function(data){
 		Players[data-1] = null;
 		scene.parentNode.removeChild(Players[data-1]);

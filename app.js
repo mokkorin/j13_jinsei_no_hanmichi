@@ -51,8 +51,11 @@ var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 
-const xlsx = require('xlsx');
+var xlsx = require('xlsx');
 let db = xlsx.readFile('db.xlsx');
+let masu_sheet = db.Sheets['Event'];
+var wei = xlsx.utils.decode_range(masu_sheet['!ref']);
+console.log(wei);
 
 var PORT = process.env.PORT || 3000;
 
@@ -68,7 +71,6 @@ http.listen(PORT, () => {
 });
 
 var id = 0;		//アクセス数
-var turn = 0;           //ターン数
 var userHash = {};		//アクセスしているユーザのハッシュ
 var order = [];	//すごろくの順番
 var mapdata = new Array(MASU_MAX);	//map生成のデータ
@@ -78,32 +80,45 @@ mapDataCreate(mapdata);				//map生成
 /* アクセスを感知したら動く */
 io.sockets.on('connection', function(socket){
     id++;
-    userHash[socket.id] = id;
-    order.push(socket.id);
-    socket.emit('initialize', id);  //引数のsocket only に送信
-    socket.broadcast.emit('player enter', id);	//他のプレイヤーが入ってきたことを通知
+    if(id > 4){
 
-    /* change id を受信したら対応するidを変更し、結果を送る */
-    socket.on('change id', function(data){
-	socket.emit('setID', data);
-	userHash[socket.id] = data;
-    });
+    }
+    else{
+	    userHash[socket.id] = id;
+	    order.push(socket.id);
+	    socket.emit('initialize', id);  //引数のsocket only に送信
+	    socket.broadcast.emit('player enter', id);	//他のプレイヤーが入ってきたことを通知
 
-    /* クライアント側からgame initializeを受けとったら実行される */
-    socket.on('game initialize', function(){
-	order = shuffle(order);
-	io.sockets.emit('init', mapdata, id);
-    });
+	    /* change id を受信したら対応するidを変更し、結果を送る */
+	    socket.on('change id', function(data){
+			socket.emit('setID', data);
+			userHash[socket.id] = data;
+	    });
 
-    socket.on('ready', function(){
-	socket.emit('start game');
-	socket.broadcast.emit('start game');
-    });
-    
-    /* 切断を感知したら全員に切断を通知する */
-    socket.on('disconnect', function(){
-	io.sockets.emit('disconnect player', userHash[socket.id]);
-	userHash[socket.id] = null;
-	id--;
-    });
+	    /* クライアント側からgame initializeを受けとったら実行される */
+	    socket.on('game initialize', function(){
+			order = shuffle(order);
+			io.sockets.emit('init', mapdata, id);
+	    });
+
+	    socket.on('ready', function(){
+			socket.emit('start game');
+			socket.broadcast.emit('start game');
+	    });
+	    
+	    socket.on('game turn', function(turn){
+	    	if(socket.id == order[turn]){
+	    		socket.emit('your turn');
+	    	}else{
+	    		socket.emit('other turn', userHash[order[turn]]);
+	    	}
+	    });
+
+	    /* 切断を感知したら全員に切断を通知する */
+	    socket.on('disconnect', function(){
+			io.sockets.emit('disconnect player', userHash[socket.id]);
+			userHash[socket.id] = null;
+			id--;
+	    });
+	}
 });
