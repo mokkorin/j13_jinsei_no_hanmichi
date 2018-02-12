@@ -148,6 +148,13 @@ var player_disp = function(player, scene)
     }
 }
 
+
+/* 職業選択関数(樽) */
+function jobSelect(job_list) {
+	
+}
+
+
 /* メイン関数 */
 window.onload = function(){
     core = new Core(WIDTH, HEIGHT);
@@ -155,7 +162,8 @@ window.onload = function(){
     core.preload('./image/chara1.png');
     core.preload('./image/start.png');
     core.preload('./image/saikoro.png');
-
+	core.preload('./image/status.png'); // (樽)
+	
     core.onload = function(){
 	moveStageToCenter(core);	//画面を中央に表示
 
@@ -167,6 +175,9 @@ window.onload = function(){
 
 	var event_list = [];
 
+	var money_text = new Label();
+	var intel_text = new Label();
+		
 	/* メニューシーンを生成する関数 */
 	var MenuScene = function(){
 	    var scene = new Scene();
@@ -271,6 +282,7 @@ window.onload = function(){
 	var GameScene = function(){
 	    var scene = new Scene();
 	    var map = new Square();
+		var p_status = new Sprite(180, 85); // (樽)
 	    var saikoro = new Sprite(200, 64);
 	    var Players = [null, null, null, null];
 	    var time = 0;
@@ -298,6 +310,12 @@ window.onload = function(){
 	    saikoro.y = HEIGHT - 58;
 	    scene.addChild(saikoro);
 
+		/* ここでステータス表示(樽) */
+		p_status.image = core.assets['./image/status.png'];
+	    p_status.x = WIDTH - 190;
+	    p_status.y = HEIGHT - 85;
+		scene.addChild(p_status);
+		
 	    scene.backgroundColor = "rgb(50, 200, 200)";
 	    socket.emit('game initialize');		//シーンを読み込んだらサーバ側にgame initializeを送信
 	    socket.on('init', function(data, number, array){		//map data を読み込んだらマップを作成し表示する
@@ -309,6 +327,19 @@ window.onload = function(){
 			    Players[i] = new Player(map, i);
 			}
 
+			/* 自分のステータス表示、座標は微調整（樽）*/
+			money_text.text = (Players[myID-1].money + '');
+			money_text.moveTo(WIDTH - 160 , HEIGHT - 75 );
+			money_text.color = 'rgba(255, 0, 0, 1)';
+			money_text.font = "20px Century";
+			scene.addChild(money_text);
+			
+			intel_text.text = (Players[myID-1].intelligent + '');
+			intel_text.moveTo( WIDTH - 75, HEIGHT - 75 );
+			intel_text.color = 'rgba(255, 0, 0, 1)';
+			intel_text.font = "20px Century";
+			scene.addChild(intel_text);
+			
 			player_disp(Players, scene);
 	    });
 	    
