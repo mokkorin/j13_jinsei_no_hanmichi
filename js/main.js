@@ -11,6 +11,9 @@ const NORMAL_MASU = 3;
 
 const MASU_MAX = 20;
 
+const CHILD = 0;
+const ADULT = 1;
+
 var core = null;
 
 /* class群 */
@@ -62,8 +65,8 @@ var Player = Class.create(Sprite,{
     		}
     	}
     },
-    player_hoge : function(){
-
+    output : function(){
+    	console.log(this.intelligent);
     }
 
     // 以下必要な数だけメソッドを記述
@@ -83,7 +86,23 @@ var Square = Class.create(Sprite, {
 		this.y = y;
 		this.frame = type;
     },
-    event : function(event_list, player, message){
+    event : function(event_list, player, message, AorC){
+    	if(AorC == CHILD){
+    		player.intelligent += event_list[this.frame].child;
+    		if(player.intelligent < 0){
+    			player.intelligent = 0;
+    		}
+    	}
+    	if(AorC == ADULT){
+    		player.money += event_list[this.frame].adult;
+    		if(player.money < 0){
+    			player.money = 0;
+    		}
+    	}
+		message.font = '20px 游明朝';
+    	message.text = event_list[this.frame].explain;
+    	message.x = (WIDTH/2) - message._boundWidth/2;
+    	message.y = (HEIGHT/2) - 20;
 
     },
     output : function(){
@@ -174,7 +193,6 @@ window.onload = function(){
 	    var info_message = [null, null, null, null, null];		//メッセージログ。直近5個まで表示
 	    var add_info = "";		//info_messageに追加する文字列
 	    var start_button = new Sprite(200, 50);
-
 
 	    scene.backgroundColor = "rgb(0, 200, 250)";	//sceneの背景色の設定
 
@@ -274,9 +292,10 @@ window.onload = function(){
 	    var saikoro = new Sprite(200, 64);
 	    var Players = [null, null, null, null];
 	    var time = 0;
-	    var turn = 0;
+	    var turn = 1;
 	    var now_message = new Label(' ');
 	    var event_message = new Label(' ');
+	    var generation = CHILD;
 
 	    var isMyturn = 0;	//自分のターンかどうか
 	    var isMove = 0;		//移動中かどうか
@@ -304,7 +323,7 @@ window.onload = function(){
 			MapCreate(map, WIDTH/2-10, HEIGHT/2-40, data);
 			MapOutput(map, scene);
 			event_list = array;
-			console.log(event_list[0].name);
+			console.log(event_list[0].explain);
 			for(var i=0; i<number; i++){
 			    Players[i] = new Player(map, i);
 			}
@@ -339,6 +358,8 @@ window.onload = function(){
 		    		move = Math.floor(Math.random()*5) + 1;
 		    		event_message.font = '30px 游明朝';
 		    		event_message.text = move;
+		    		event_message.x = (WIDTH/2) + event_message._boundWidth;
+	    			event_message.y = (HEIGHT/2) - 20;
 		    		socket.emit('player move', move);
 	    		}
 	    	}
@@ -352,12 +373,18 @@ window.onload = function(){
 				if(isMove == 1){
 					if(move > 0){
 						move--;
-						event_message.text = move;
+						event_message.font = '30px 游明朝';
+		    			event_message.text = move;
+		    			event_message.x = (WIDTH/2) + event_message._boundWidth;
+	    				event_message.y = (HEIGHT/2) - 20;
 						Players[movePlayer-1].player_move(1);
 					}
 					else{
 						isMove = 0;
 						event_message.text = "";
+						Players[movePlayer-1].place.event(event_list, Players[movePlayer-1], event_message, generation);
+						console.log(event_message.text);
+						Players[movePlayer-1].output();
     					socket.emit('game turn', turn);
 					}
 				}
