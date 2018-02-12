@@ -167,6 +167,7 @@ window.onload = function(){
     core.onload = function(){
 	moveStageToCenter(core);	//画面を中央に表示
 
+		
 	/* core.onload()関数内の大域変数 */
 	var socket = io.connect();
 	var myID = 0;
