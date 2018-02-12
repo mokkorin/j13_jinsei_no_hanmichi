@@ -47,8 +47,8 @@ var Player = Class.create(Sprite,{
     player_move : function(value) { // playerを移動させる関数
 		for(var i = 0; i < value; i++){
 		    this.place = this.place.next;
-		    this.x = (this.place.x - 32/2) + (20 * (PlayerID%2));
-		    this.y = (this.place.y - 32/2) + (20 * Math.floor(PlayerID/2));
+		    this.x = (this.place.x - 32/2) + (20 * ((this.type/4)%2));
+		    this.y = (this.place.y - 32/2) + (20 * Math.floor((this.type/4)/2));
 		}
     },
     onenterframe:function(){
@@ -71,21 +71,24 @@ var Player = Class.create(Sprite,{
 
 var Square = Class.create(Sprite, {
     initialize : function(){
-	Sprite.call(this, 32, 32);
-	this.image = core.assets['./image/masu.png'];
-	this.x = 0;
-	this.y = 0;
-	this.frame = 0;
-	this.next = null;
+		Sprite.call(this, 32, 32);
+		this.image = core.assets['./image/masu.png'];
+		this.x = 0;
+		this.y = 0;
+		this.frame = 0;
+		this.next = null;
     },
     create : function(x, y, type){
-	this.x = x;
-	this.y = y;
-	this.frame = type;
+		this.x = x;
+		this.y = y;
+		this.frame = type;
+    },
+    event : function(event_list, player, message){
+
     },
     output : function(){
-	console.log('x = ' + this.x);
-	console.log('y = ' + this.y);
+		console.log('x = ' + this.x);
+		console.log('y = ' + this.y);
     }
 });
 
@@ -115,12 +118,12 @@ var MapCreate = function(masu, centerX, centerY, data)
 
     p.create(rx * Math.cos(0) + centerX, ry * Math.sin(0) + centerY, data[0]);
     for(var i=1; i<MASU_MAX; i++){
-	mx = rx * Math.cos((Math.PI/180) * i *(360/MASU_MAX)) + centerX;
-	my = ry * Math.sin((Math.PI/180) * i * (360/MASU_MAX)) + centerY;
-	q = new Square();
-	q.create(mx, my, data[i]);
-	p.next = q;
-	p = p.next;
+		mx = rx * Math.cos((Math.PI/180) * i *(360/MASU_MAX)) + centerX;
+		my = ry * Math.sin((Math.PI/180) * i * (360/MASU_MAX)) + centerY;
+		q = new Square();
+		q.create(mx, my, data[i]);
+		p.next = q;
+		p = p.next;
     }
     p.next = masu;
 
@@ -141,7 +144,7 @@ var MapOutput = function(map, scene)
 var player_disp = function(player, scene)
 {
     for(var i=0; i<player.length; i++){
-	scene.addChild(player[i]);
+		scene.addChild(player[i]);
     }
 }
 
@@ -160,7 +163,9 @@ window.onload = function(){
 	var socket = io.connect();
 	var myID = 0;
 	var member_num = 0;
-	var member_limit = 2;		//一緒に遊べる人数
+	var member_limit = 2;		//最低限遊べる人数
+
+	var event_list = [];
 
 	/* メニューシーンを生成する関数 */
 	var MenuScene = function(){
@@ -169,7 +174,6 @@ window.onload = function(){
 	    var info_message = [null, null, null, null, null];		//メッセージログ。直近5個まで表示
 	    var add_info = "";		//info_messageに追加する文字列
 	    var start_button = new Sprite(200, 50);
-	    //var db = xlsx.readFile('db.xlsx');
 
 
 	    scene.backgroundColor = "rgb(0, 200, 250)";	//sceneの背景色の設定
@@ -269,15 +273,25 @@ window.onload = function(){
 	    var map = new Square();
 	    var saikoro = new Sprite(200, 64);
 	    var Players = [null, null, null, null];
-	    var t = 0;
+	    var time = 0;
 	    var turn = 0;
 	    var now_message = new Label(' ');
+	    var event_message = new Label(' ');
+
 	    var isMyturn = 0;	//自分のターンかどうか
+	    var isMove = 0;		//移動中かどうか
+	    var movePlayer = 0;	//移動中のプレイヤー
+	    var move = 0;		//進むべきマスの数
 
 	    now_message.font = '20px 游明朝';
 	    now_message.x = 10;
 	    now_message.y = 10;
 	    scene.addChild(now_message);
+
+	    event_message.font = '30px 游明朝';
+	    event_message.x = (WIDTH/2) + event_message._boundWidth;
+	    event_message.y = (HEIGHT/2) - 20;
+	    scene.addChild(event_message);
 
 	    saikoro.image = core.assets['./image/saikoro.png'];
 	    saikoro.x = WIDTH/2 - 100;
@@ -286,10 +300,11 @@ window.onload = function(){
 
 	    scene.backgroundColor = "rgb(50, 200, 200)";
 	    socket.emit('game initialize');		//シーンを読み込んだらサーバ側にgame initializeを送信
-	    socket.on('init', function(data, number){		//map data を読み込んだらマップを作成し表示する
+	    socket.on('init', function(data, number, array){		//map data を読み込んだらマップを作成し表示する
 			MapCreate(map, WIDTH/2-10, HEIGHT/2-40, data);
 			MapOutput(map, scene);
-
+			event_list = array;
+			console.log(event_list[0].name);
 			for(var i=0; i<number; i++){
 			    Players[i] = new Player(map, i);
 			}
@@ -309,11 +324,45 @@ window.onload = function(){
 	    	isMyturn = 0;
 	    });
 
+	    socket.on('move start', function(p_num, mv_num){
+	    	//Players[p_num-1].player_move(mv_num);
+	    	move = mv_num;
+	    	movePlayer = p_num;
+	    	isMove = 1;
+	    	turn++;
+	    });
+
 	    //サイコロのタッチイベント
 	    saikoro.ontouchstart = function(){
-	    	if(isMyturn == 0) break;
-
+	    	if(isMyturn == 1){
+	    		if(isMove == 0){
+		    		move = Math.floor(Math.random()*5) + 1;
+		    		event_message.font = '30px 游明朝';
+		    		event_message.text = move;
+		    		socket.emit('player move', move);
+	    		}
+	    	}
 	    };
+
+	    /* フレーム処理 */
+		scene.addEventListener(Event.ENTER_FRAME, function(){
+			time++;
+			if(time > 10){
+				time = 0;
+				if(isMove == 1){
+					if(move > 0){
+						move--;
+						event_message.text = move;
+						Players[movePlayer-1].player_move(1);
+					}
+					else{
+						isMove = 0;
+						event_message.text = "";
+    					socket.emit('game turn', turn);
+					}
+				}
+			}
+		});
 	    /*socket.on('disconnect player', function(data){
 		Players[data-1] = null;
 		scene.parentNode.removeChild(Players[data-1]);
