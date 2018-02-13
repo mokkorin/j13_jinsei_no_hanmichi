@@ -189,7 +189,7 @@ window.onload = function(){
 		
 	/* core.onload()関数内の大域変数 */
 	var socket = io.connect();
-	var myID = 0;
+	var myID = 1;
 	var member_num = 0;
 	var member_limit = 2;		//最低限遊べる人数
 
