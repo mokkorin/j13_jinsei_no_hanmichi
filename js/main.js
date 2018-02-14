@@ -189,7 +189,7 @@ window.onload = function(){
 		
 	/* core.onload()関数内の大域変数 */
 	var socket = io.connect();
-	var myID = 0;
+	var myID = 1;
 	var member_num = 0;
 	var member_limit = 2;		//最低限遊べる人数
 
@@ -197,6 +197,7 @@ window.onload = function(){
 
 	var money_text = new Label();
 	var intel_text = new Label();
+	var turn_text = new Label(); // （樽）
 		
 	/* メニューシーンを生成する関数 */
 	var MenuScene = function(){
@@ -335,6 +336,9 @@ window.onload = function(){
 	    p_status.x = WIDTH - 190;
 	    p_status.y = HEIGHT - 85;
 		scene.addChild(p_status);
+
+		/* ここでステータス表示(樽) */
+
 		
 	    scene.backgroundColor = "rgb(50, 200, 200)";
 	    socket.emit('game initialize');		//シーンを読み込んだらサーバ側にgame initializeを送信
@@ -354,8 +358,14 @@ window.onload = function(){
 			intel_text.color = 'rgba(255, 0, 0, 1)';
 			intel_text.font = "20px Century";
 
+			/* turn表示(樽) */
+			turn_text.moveTo(WIDTH - 100 , HEIGHT - 400 );
+			turn_text.color = 'rgba(0, 0, 0, 1)';
+			turn_text.font = "20px Century";
+			
 			scene.addChild(money_text);
 			scene.addChild(intel_text);
+			scene.addChild(turn_text); // (樽)
 			player_disp(Players, scene);
 	    });
 	    
@@ -420,6 +430,7 @@ window.onload = function(){
 			/* 自分のステータス表示、座標は微調整（樽）*/
 			money_text.text = (Players[myID-1].money + '');			
 			intel_text.text = (Players[myID-1].intelligent + '');
+			turn_text.text = ((turn + '') + "ターン目");
 			
 		});
 	    /*socket.on('disconnect player', function(data){
