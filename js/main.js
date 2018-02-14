@@ -182,7 +182,8 @@ window.onload = function(){
     core.preload('./image/start.png');
     core.preload('./image/saikoro.png');
 	core.preload('./image/status.png'); // (樽)
-	
+	core.preload('./image/job_button.png'); // (樽)
+
     core.onload = function(){
 	moveStageToCenter(core);	//画面を中央に表示
 
@@ -193,10 +194,13 @@ window.onload = function(){
 	var member_num = 0;
 	var member_limit = 2;		//最低限遊べる人数
 
-	var event_list = [];
+	var event_list = [];	//マスのイベントのリスト
+	var job_list = [];		//ジョブのリスト
 
 	var money_text = new Label();
 	var intel_text = new Label();
+	var turn_text = new Label(); // （樽）
+	var job_text = new Label(); // (樽)
 		
 	/* メニューシーンを生成する関数 */
 	var MenuScene = function(){
@@ -305,7 +309,8 @@ window.onload = function(){
 	    var saikoro = new Sprite(200, 64);
 	    var Players = [null, null, null, null];
 	    var time = 0;
-	    var turn = 1;
+	    var turn = 1;		//ターン数
+	    var t_cnt = 0;		//ターン数を増やすためのカウント
 	    var now_message = new Label(' ');
 	    var event_message = new Label(' ');
 	    var generation = CHILD;
@@ -338,10 +343,11 @@ window.onload = function(){
 		
 	    scene.backgroundColor = "rgb(50, 200, 200)";
 	    socket.emit('game initialize');		//シーンを読み込んだらサーバ側にgame initializeを送信
-	    socket.on('init', function(data, number, array){		//map data を読み込んだらマップを作成し表示する
+	    socket.on('init', function(data, number, eventArray, jobArray){		//map data を読み込んだらマップを作成し表示する
 			MapCreate(map, WIDTH/2-10, HEIGHT/2-40, data);
 			MapOutput(map, scene);
-			event_list = array;
+			event_list = eventArray;
+			job_list = jobArray;
 			console.log(event_list[0].explain);
 			for(var i=0; i<number; i++){
 			    Players[i] = new Player(map, i);
@@ -353,30 +359,46 @@ window.onload = function(){
 			intel_text.moveTo( WIDTH - 75, HEIGHT - 75 );
 			intel_text.color = 'rgba(255, 0, 0, 1)';
 			intel_text.font = "20px Century";
-
+			/* turn表示セット(樽) */
+			turn_text.moveTo(WIDTH - 100 , HEIGHT - 400 );
+			turn_text.color = 'rgba(0, 0, 0, 1)';
+			turn_text.font = "20px Century";
+			scene.addChild(turn_text); // (樽)
 			scene.addChild(money_text);
 			scene.addChild(intel_text);
 			player_disp(Players, scene);
 	    });
 	    
-	    socket.emit('game turn', turn);
+	    socket.emit('game turn', t_cnt);
 
-	    socket.on('your turn', function(){
+	    socket.on('your turn', function(t_num, Turn){
+	    	t_cnt = t_num;
+	    	turn = Turn;
 	    	now_message.text = "あなたの番です";
 	    	isMyturn = 1;
+	    	turn_text.text = ((turn + '') + "ターン目");
 	    });
 
-	    socket.on('other turn', function(num){
+	    socket.on('other turn', function(num, t_num, Turn){
+	    	t_cnt = t_num;
+	    	turn = Turn;
 	    	now_message.text = "Player" + num + "の番です";
 	    	isMyturn = 0;
+	    	turn_text.text = ((turn + '') + "ターン目");
 	    });
 
 	    socket.on('move start', function(p_num, mv_num){
 	    	//Players[p_num-1].player_move(mv_num);
+	    	console.log("turn = " + turn);
+	    	console.log("t = " + t_cnt);
 	    	move = mv_num;
 	    	movePlayer = p_num;
 	    	isMove = 1;
-	    	turn++;
+	    	t_cnt++;
+	    });
+
+	    socket.on('job select', function(){
+	    	core.pushScene(jobSelect(Players));
 	    });
 
 	    //サイコロのタッチイベント
@@ -411,15 +433,16 @@ window.onload = function(){
 						isMove = 0;
 						event_message.text = "";
 						Players[movePlayer-1].place.event(event_list, Players[movePlayer-1], event_message, generation);
-						console.log(event_message.text);
-						Players[movePlayer-1].output();
-    					socket.emit('game turn', turn);
+						/* 自分のステータス表示、座標は微調整（樽）*/
+						money_text.text = (Players[myID-1].money + '');			
+						intel_text.text = (Players[myID-1].intelligent + '');
+						//console.log(event_message.text);
+						//Players[movePlayer-1].output();
+    					socket.emit('game turn', t_cnt);
 					}
 				}
 			}
-			/* 自分のステータス表示、座標は微調整（樽）*/
-			money_text.text = (Players[myID-1].money + '');			
-			intel_text.text = (Players[myID-1].intelligent + '');
+			
 			
 		});
 	    /*socket.on('disconnect player', function(data){
@@ -431,6 +454,69 @@ window.onload = function(){
 	    
 	    return scene;
 	};
+
+	var jobSelect = function(Players){
+			var scene = new Scene();
+			var label_text = new Label();
+			var job_image = new Sprite(400, 40); // (樽)
+			var button = new Array(job_list.length);
+			
+			label_text.text = ("これから君は社会人になる。職業を選択しよう！");
+			label_text.color = 'rgba(255, 0, 0, 1)';
+			label_text.font = "20px  Centuly";
+			label_text.moveTo(10 , 15);
+			scene.addChild(label_text);
+			
+			scene.backgroundColor = 'rgba(40, 40, 40, 0.9)';
+
+			var button_func = function(){
+				if(this.childNodes[1].opacity == 1){
+					socket.emit('select job', myID, (this.childNodes[0].y - 70)/60);
+				}
+				console.log((this.childNodes[0].y - 70)/60);	//位置依存
+			}
+
+			socket.on('all clicked', function(jobs){
+				for (var i = 0; i < Players.length; i++) {
+					if(Players[i] != null){
+						Players[i].job = jobs[i];
+					}
+					core.popScene();
+				}
+			});
+
+			for(var i = 0; i < job_list.length; i++){
+				button[i] = new Group()
+				job_image = new Sprite(400, 40);
+				job_image.image = core.assets['./image/job_button.png'];
+				job_image.x = (WIDTH - 400) /2 ;
+				job_image.y = 70 + (60 * i);
+				
+				job_text = new Label();
+				job_text.moveTo(job_image.x + 5 , job_image.y + 5);
+				if((Players[myID-1].intelligent) >= i*10){
+					job_text.color = 'rgb(0, 0, 0)';
+					job_text.opacity = 1.0;
+
+				}else{
+					job_text.color = 'rgb(0, 0, 0)';
+					job_text.opacity = 0.3;
+				}
+				job_text.font = "18px Century";
+				job_text.text = ("職業:" + job_list[i].Name + " " + 
+								 "給料:" + (job_list[i].Salary + '') + " " +
+								 "倍率:" + (job_list[i].Bairitu + '')  );
+
+				button[i].addChild(job_image);
+				button[i].addChild(job_text);
+				scene.addChild(button[i]);
+				button[i].addEventListener("touchstart", button_func);
+			}
+
+			
+			return scene;
+			
+		}
 
 	
 	core.replaceScene(MenuScene());

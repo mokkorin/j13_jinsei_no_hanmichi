@@ -27,9 +27,9 @@ function shuffle(array)
 function mapDataCreate(map)
 {
     var ratios = new Array(5);	//マスの種類の出現割合を示す配列
-    ratios[PLUS_MASU] = 10;		//プラスマスの割合
+    ratios[PLUS_MASU] = 12;		//プラスマスの割合
     ratios[MINUS_MASU] = 5;		//マイナスマスの割合
-    ratios[ITEM_MASU] = 5;		//アイテムマスの割合
+    ratios[ITEM_MASU] = 3;		//アイテムマスの割合
     ratios[EVENT_MASU] = 0;		//イベントマスの割合
     ratios[NORMAL_MASU] = 0;	//ノーマルマスの割合
 
@@ -56,6 +56,17 @@ function ArrayDelete(array, target)
 
 }
 
+/* 全員がクリックしたかチェックする関数 */
+function ClickCheck(array)
+{
+	for (var i = 0; i < array.length; i++) {
+		if(array[i] == -1){
+			return 0;
+		}
+	}
+	return 1;
+}
+
 /* ------ここからメイン------- */
 var express = require('express');
 var app = express();
@@ -65,6 +76,7 @@ var io = require('socket.io')(http);
 var xlsx = require('xlsx');
 let db = xlsx.readFile('db.xlsx');
 let masu_sheet = db.Sheets['Event'];
+let job_sheet = db.Sheets['Job'];
 var range = xlsx.utils.decode_range(masu_sheet['!ref']);
 var row = range.e.r;
 console.log(row);
@@ -80,9 +92,26 @@ for(var r = range.s.r+1; r <= range.e.r; r++){
 	};
 	num++;
 }
+var job_type = [];
+var range = xlsx.utils.decode_range(job_sheet['!ref']);
+var row = range.e.r;
+num = 0;
+
+for(var r = range.s.r+1; r <= range.e.r; r++){
+	job_type[num] = {
+		Name:    job_sheet[xlsx.utils.encode_cell({c:0, r:r})].v,
+		Salary:  job_sheet[xlsx.utils.encode_cell({c:1, r:r})].v,
+		Bairitu:  job_sheet[xlsx.utils.encode_cell({c:2, r:r})].v,
+	};
+	num++;
+}
 
 for (var i = 0; i < event_type.length; i++) {
 	console.log(event_type[i]);
+}
+
+for (var i = 0; i < job_type.length; i++) {
+	console.log(job_type[i]);
 }
 var PORT = process.env.PORT || 3000;
 
@@ -97,10 +126,14 @@ http.listen(PORT, () => {
     console.log(`listening on *:${PORT}`);
 });
 
-var id = 0;		//アクセス数
+var id = 0;				//アクセス数
 var userHash = {};		//アクセスしているユーザのハッシュ
-var order = [];	//すごろくの順番
+var order = [];			//すごろくの順番
+var user_turn = {};		//ユーザー別のターン数
+var isSelect = [];
+var turn = 0;
 var mapdata = new Array(MASU_MAX);	//map生成のデータ
+
 
 mapDataCreate(mapdata);				//map生成
 
@@ -112,7 +145,9 @@ io.sockets.on('connection', function(socket){
     }
     else{
 	    userHash[socket.id] = id;
+	    user_turn[socket.id] = 0;
 	    order.push(socket.id);
+	    isSelect.push(-1);
 	    socket.emit('initialize', id);  //引数のsocket only に送信
 	    socket.broadcast.emit('player enter', id);	//他のプレイヤーが入ってきたことを通知
 
@@ -125,7 +160,7 @@ io.sockets.on('connection', function(socket){
 	    /* クライアント側からgame initializeを受けとったら実行される */
 	    socket.on('game initialize', function(){
 			order = shuffle(order);
-			socket.emit('init', mapdata, id, event_type);
+			socket.emit('init', mapdata, id, event_type, job_type);
 	    });
 
 	    socket.on('ready', function(){
@@ -133,16 +168,31 @@ io.sockets.on('connection', function(socket){
 			socket.broadcast.emit('start game');
 	    });
 	    
-	    socket.on('game turn', function(turn){
-	    	if(socket.id == order[turn%id]){
-	    		socket.emit('your turn');
+	    socket.on('game turn', function(t_num){
+	    	if(t_num > order.length-1){
+	    		user_turn[socket.id]++;
+	    		t_num = 0;
+	    	}
+	    	if(user_turn[socket.id] != 4){
+	    		if(socket.id == order[t_num]){
+	    			socket.emit('your turn', t_num, user_turn[socket.id]);
+	    		}else{
+	    			socket.emit('other turn', userHash[order[t_num]], t_num, user_turn[socket.id]);
+	    		}
 	    	}else{
-	    		socket.emit('other turn', userHash[order[turn%id]]);
+	    		socket.emit('job select');
 	    	}
 	    });
 
 	    socket.on('player move', function(move){
 	    	io.sockets.emit('move start', userHash[socket.id], move);
+	    });
+
+	    socket.on('select job', function(myID, job){
+	    	isSelect[myID] = job;
+	    	if(ClickCheck(isSelect) == 1){
+	    		io.sockets.emit('all clicked', isSelect);
+	    	}
 	    });
 	}
 	/* 切断を感知したら全員に切断を通知する */
