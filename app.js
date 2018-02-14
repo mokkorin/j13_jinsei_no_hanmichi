@@ -45,6 +45,17 @@ function mapDataCreate(map)
     }
 }
 
+/* 配列の要素削除する */
+function ArrayDelete(array, target)
+{
+	for (var i = 0; i < array.length; i++) {
+		if(array[i] == target){
+			array.splice(i, 1);
+		}
+	}
+
+}
+
 /* ------ここからメイン------- */
 var express = require('express');
 var app = express();
@@ -138,6 +149,7 @@ io.sockets.on('connection', function(socket){
 	socket.on('disconnect', function(){
 		io.sockets.emit('disconnect player', userHash[socket.id]);
 		userHash[socket.id] = null;
+		ArrayDelete(order, socket.id);
 		id--;
 	});
 });
