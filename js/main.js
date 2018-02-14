@@ -392,7 +392,6 @@ window.onload = function(){
 					job_list[0].Salary = 0;
 					job_list[0].Bairitu = 0;
 					core.pushScene(jobSelect(job_list,Players,myID));
-					
 	    			if(isMove == 0){
 		    			move = Math.floor(Math.random()*5) + 1;
 		    			event_message.font = '30px 游明朝';
@@ -476,9 +475,40 @@ window.onload = function(){
 								 "倍率:" + (job_list[0].Bairitu + '')  );
 				scene.addChild(job_text);
 			}
+
+			while(1){
+				/* スタートボタンにタッチイベントを付加 */
+				button[0].ontouchstart = function(){
+					if(Players[myID-1].intelligent >= 0)	Players[myID-1].job = 0;
+					else return;
+				};
+				button[1].ontouchstart = function(){
+					if(Players[myID-1].intelligent >= 0)	Players[myID-1].job = 1;
+					else return;
+				};
+				
+				button[2].ontouchstart = function(){
+					if(Players[myID-1].intelligent >= 0)	Players[myID-1].job = 2;
+					else return;
+				};
+				button[3].ontouchstart = function(){
+					if(Players[myID-1].intelligent >= 0)	Players[myID-1].job = 3;
+					else return;
+				};
+				button[4].ontouchstart = function(){
+					if(Players[myID-1].intelligent >= 0)	Players[myID-1].job = 4;
+					else return;
+				};
+				button[5].ontouchstart = function(){
+					if(Players[myID-1].intelligent >= 0)	Players[myID-1].job = 5;
+					else return;
+				};
+			}
 			
+			core.popScene();
 			return scene;
-			
+
+
 		}
 		
 		
