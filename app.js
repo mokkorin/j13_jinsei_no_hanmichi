@@ -174,7 +174,7 @@ io.sockets.on('connection', function(socket){
 	    	if(t_num > order.length-1){
 	    		user_turn[socket.id]++;
 	    		t_num = 0;
-	    		if(user_turn[socket.id] == 4){
+	    		if(user_turn[socket.id] == 10){
 	    			select_flag[socket.id] = 1;
 	    		}
 	    	}
