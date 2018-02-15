@@ -86,7 +86,7 @@ var Square = Class.create(Sprite, {
 		this.y = y;
 		this.frame = type;
     },
-    event : function(event_list, player, message, AorC){
+    event : function(event_list, job_list, player, message, AorC){
     	if(AorC == CHILD){
     		player.intelligent += event_list[this.frame].child;
     		if(player.intelligent < 0){
@@ -313,7 +313,9 @@ window.onload = function(){
 	    var t_cnt = 0;		//ターン数を増やすためのカウント
 	    var now_message = new Label(' ');
 	    var event_message = new Label(' ');
+	    var generation_message = new Label('子供時代');
 	    var generation = CHILD;
+	    var job_info = new Label('');
 
 	    var isMyturn = 0;	//自分のターンかどうか
 	    var isMove = 0;		//移動中かどうか
@@ -324,6 +326,11 @@ window.onload = function(){
 	    now_message.x = 10;
 	    now_message.y = 10;
 	    scene.addChild(now_message);
+
+		generation_message.font = '20px 游明朝';
+		generation_message.x = WIDTH - 100;
+		generation_message.y = HEIGHT/2 - 150;
+		scene.addChild(generation_message);
 
 	    event_message.font = '30px 游明朝';
 	    event_message.x = (WIDTH/2) + event_message._boundWidth;
@@ -340,7 +347,12 @@ window.onload = function(){
 	    p_status.x = WIDTH - 190;
 	    p_status.y = HEIGHT - 85;
 		scene.addChild(p_status);
-		
+		job_info.font = '20px 游明朝';
+		job_info.color = "red";
+		job_info.x = (p_status.x + 180/2) - job_info._boundWidth/2;
+		job_info.y = HEIGHT - 30;
+		scene.addChild(job_info);
+
 	    scene.backgroundColor = "rgb(50, 200, 200)";
 	    socket.emit('game initialize');		//シーンを読み込んだらサーバ側にgame initializeを送信
 	    socket.on('init', function(data, number, eventArray, jobArray){		//map data を読み込んだらマップを作成し表示する
@@ -398,6 +410,8 @@ window.onload = function(){
 	    });
 
 	    socket.on('job select', function(){
+	    	generation = ADULT;
+	    	generation_message.text = "大人時代";
 	    	core.pushScene(jobSelect(Players));
 	    });
 
@@ -432,7 +446,7 @@ window.onload = function(){
 					else{
 						isMove = 0;
 						event_message.text = "";
-						Players[movePlayer-1].place.event(event_list, Players[movePlayer-1], event_message, generation);
+						Players[movePlayer-1].place.event(event_list, job_list, Players[movePlayer-1], event_message, generation);
 						/* 自分のステータス表示、座標は微調整（樽）*/
 						money_text.text = (Players[myID-1].money + '');			
 						intel_text.text = (Players[myID-1].intelligent + '');
@@ -442,8 +456,10 @@ window.onload = function(){
 					}
 				}
 			}
-			
-			
+			if(Players[myID-1].job != null){
+				job_info.text = job_list[Players[myID-1].job].Name;
+				job_info.x = (p_status.x + 180/2) - job_info._boundWidth/2;
+			}
 		});
 	    /*socket.on('disconnect player', function(data){
 		Players[data-1] = null;
@@ -460,18 +476,22 @@ window.onload = function(){
 			var label_text = new Label();
 			var job_image = new Sprite(400, 40); // (樽)
 			var button = new Array(job_list.length);
+			var isPush = 0;
 			
 			label_text.text = ("これから君は社会人になる。職業を選択しよう！");
 			label_text.color = 'rgba(255, 0, 0, 1)';
 			label_text.font = "20px  Centuly";
+			label_text.width = 500;
 			label_text.moveTo(10 , 15);
 			scene.addChild(label_text);
 			
 			scene.backgroundColor = 'rgba(40, 40, 40, 0.9)';
 
 			var button_func = function(){
-				if(this.childNodes[1].opacity == 1){
+				if(this.childNodes[1].opacity == 1 && isPush == 0){
 					socket.emit('select job', myID, (this.childNodes[0].y - 70)/60);
+					label_text.text = "つうしん　たいき　ちゅう";
+					isPush = 1;
 				}
 				console.log((this.childNodes[0].y - 70)/60);	//位置依存
 			}
@@ -481,8 +501,9 @@ window.onload = function(){
 					if(Players[i] != null){
 						Players[i].job = jobs[i];
 					}
-					core.popScene();
 				}
+				core.popScene();
+
 			});
 
 			for(var i = 0; i < job_list.length; i++){

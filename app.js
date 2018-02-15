@@ -131,7 +131,7 @@ var userHash = {};		//アクセスしているユーザのハッシュ
 var order = [];			//すごろくの順番
 var user_turn = {};		//ユーザー別のターン数
 var isSelect = [];
-var turn = 0;
+var turn = 1;
 var mapdata = new Array(MASU_MAX);	//map生成のデータ
 
 
@@ -189,8 +189,10 @@ io.sockets.on('connection', function(socket){
 	    });
 
 	    socket.on('select job', function(myID, job){
-	    	isSelect[myID] = job;
+	    	isSelect[myID-1] = job;
+	    	console.log("select job");
 	    	if(ClickCheck(isSelect) == 1){
+		    	console.log("job");
 	    		io.sockets.emit('all clicked', isSelect);
 	    	}
 	    });
@@ -200,6 +202,7 @@ io.sockets.on('connection', function(socket){
 		io.sockets.emit('disconnect player', userHash[socket.id]);
 		userHash[socket.id] = null;
 		ArrayDelete(order, socket.id);
+		order.splice(userHash[socket.id]-1, 1);
 		id--;
 	});
 });
