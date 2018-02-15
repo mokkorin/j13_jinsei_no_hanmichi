@@ -417,6 +417,7 @@ window.onload = function(){
 	    });
 
 	    socket.on('job select', function(){
+	    	t_cnt = 0;
 	    	generation = ADULT;
 	    	generation_message.text = "大人時代";
 	    	core.pushScene(jobSelect(Players));
