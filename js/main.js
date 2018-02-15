@@ -396,6 +396,9 @@ window.onload = function(){
 	    	now_message.text = "あなたの番です";
 	    	isMyturn = 1;
 	    	turn_text.text = ((turn + '') + "ターン目");
+	    	if(turn % 7 == 0 && generation == ADULT && t_cnt == 0){
+	    		core.pushScene(PayDayScene(Players));
+	    	}
 	    });
 
 	    socket.on('other turn', function(num, t_num, Turn){
@@ -404,6 +407,9 @@ window.onload = function(){
 	    	now_message.text = "Player" + num + "の番です";
 	    	isMyturn = 0;
 	    	turn_text.text = ((turn + '') + "ターン目");
+	    	if(turn % 7 == 0 && generation == ADULT && t_cnt == 0){
+	    		core.pushScene(PayDayScene(Players));
+	    	}
 	    });
 
 	    socket.on('move start', function(p_num, mv_num){
@@ -417,7 +423,7 @@ window.onload = function(){
 	    });
 
 	    socket.on('job select', function(){
-	    	t_cnt = 0;
+	    	t_cnt = 1;
 	    	generation = ADULT;
 	    	generation_message.text = "大人時代";
 	    	core.pushScene(jobSelect(Players));
@@ -547,6 +553,48 @@ window.onload = function(){
 			return scene;
 			
 		}
+
+		var PayDayScene = function(Players){
+            var scene = new Scene();
+            var label_text = new Label('やった！給料日だ！');
+            var salary_text = new Label();
+            var click_text = new Label('画面をクリックしてください');
+            
+            scene.backgroundColor = 'rgba(40, 40, 40, 0.9)';
+
+            for (var i = 0; i < Players.length; i++) {
+            	if(Players[i] != null){
+            		Players[i].money += job_list[Players[i].job].Salary
+            	}
+            }
+
+            label_text.color = 'rgba(255, 0, 0, 1)';
+            label_text.font = "20px 游明朝";
+            label_text.moveTo(10 , 15);
+            scene.addChild(label_text);
+
+            salary_text.text = ("+" + (job_list[Players[myID-1].job].Salary + '') +" 円");
+            salary_text.color = 'rgba(255, 0, 0, 1)';
+            salary_text.font = "40px 游明朝";
+            salary_text.moveTo(10 , HEIGHT/2);
+            scene.addChild(salary_text);
+
+            click_text.color = 'rgba(255, 0, 0, 1)';
+            click_text.font = "20px 游明朝";
+            click_text.moveTo(10 , HEIGHT - 40);
+            scene.addChild(click_text);
+            
+            scene.ontouchstart = function(){
+                socket.emit('salary fin', myID);
+                click_text.text = ("つうしん たいき ちゅう")
+            };
+            
+            socket.on('all click', function(){
+                core.popScene();
+            });
+            
+            return scene;
+        }
 
 	
 	core.replaceScene(MenuScene());

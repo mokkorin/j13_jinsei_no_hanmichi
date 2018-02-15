@@ -134,7 +134,7 @@ var isSelect = [];
 var select_flag = {};
 var turn = 1;
 var mapdata = new Array(MASU_MAX);	//map生成のデータ
-
+var isClick = [];
 
 mapDataCreate(mapdata);				//map生成
 
@@ -150,6 +150,7 @@ io.sockets.on('connection', function(socket){
 	    select_flag[socket.id] = 0;
 	    order.push(socket.id);
 	    isSelect.push(-1);
+	    isClick.push(-1);
 	    socket.emit('initialize', id);  //引数のsocket only に送信
 	    socket.broadcast.emit('player enter', id);	//他のプレイヤーが入ってきたことを通知
 
@@ -193,6 +194,16 @@ io.sockets.on('connection', function(socket){
 	    	
 	    });
 
+	    socket.on('salary fin', function(myID){
+	    	isClick[myID-1] = 1;
+	    	if(ClickCheck(isClick) == 1){
+	    		for (var i = 0; i < isClick.length; i++) {
+	    			isClick[i] = -1;
+	    		}
+	    		io.sockets.emit('all click');
+	    	}
+	    });
+
 	    socket.on('player move', function(move){
 	    	io.sockets.emit('move start', userHash[socket.id], move);
 	    });
@@ -212,6 +223,8 @@ io.sockets.on('connection', function(socket){
 		userHash[socket.id] = null;
 		ArrayDelete(order, socket.id);
 		order.splice(userHash[socket.id]-1, 1);
+		isClick.splice(userHash[socket.id]-1, 1);
+		isSelect.splice(userHash[socket.id]-1, 1);
 		id--;
 	});
 });
