@@ -131,6 +131,7 @@ var userHash = {};		//アクセスしているユーザのハッシュ
 var order = [];			//すごろくの順番
 var user_turn = {};		//ユーザー別のターン数
 var isSelect = [];
+var select_flag = 0;
 var turn = 1;
 var mapdata = new Array(MASU_MAX);	//map生成のデータ
 
@@ -145,7 +146,7 @@ io.sockets.on('connection', function(socket){
     }
     else{
 	    userHash[socket.id] = id;
-	    user_turn[socket.id] = 0;
+	    user_turn[socket.id] = 1;
 	    order.push(socket.id);
 	    isSelect.push(-1);
 	    socket.emit('initialize', id);  //引数のsocket only に送信
@@ -173,15 +174,17 @@ io.sockets.on('connection', function(socket){
 	    		user_turn[socket.id]++;
 	    		t_num = 0;
 	    	}
-	    	if(user_turn[socket.id] != 4){
-	    		if(socket.id == order[t_num]){
-	    			socket.emit('your turn', t_num, user_turn[socket.id]);
-	    		}else{
-	    			socket.emit('other turn', userHash[order[t_num]], t_num, user_turn[socket.id]);
-	    		}
-	    	}else{
-	    		socket.emit('job select');
-	    	}
+		    if(user_turn[socket.id] != 4){
+		    	if(socket.id == order[t_num]){
+		    		socket.emit('your turn', t_num, user_turn[socket.id]);
+		    	}else{
+		    		socket.emit('other turn', userHash[order[t_num]], t_num, user_turn[socket.id]);
+		    	}
+		    }
+		    else{
+		    	socket.emit('job select');
+		    }
+	    	
 	    });
 
 	    socket.on('player move', function(move){

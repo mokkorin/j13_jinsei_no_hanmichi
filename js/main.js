@@ -54,6 +54,10 @@ var Player = Class.create(Sprite,{
 		    this.y = (this.place.y - 32/2) + (20 * Math.floor((this.type/4)/2));
 		}
     },
+    salary_time : function(job_list){
+    	this.money += job_list[this.job].Salary;
+    },
+
     onenterframe:function(){
     	this.time++;
     	if(this.time > 10){
@@ -87,6 +91,10 @@ var Square = Class.create(Sprite, {
 		this.frame = type;
     },
     event : function(event_list, job_list, player, message, AorC){
+    	message.font = '20px 游明朝';
+    	message.text = event_list[this.frame].explain;
+    	message.x = (WIDTH/2) - message._boundWidth/2;
+    	message.y = (HEIGHT/2) - 20;
     	if(AorC == CHILD){
     		player.intelligent += event_list[this.frame].child;
     		if(player.intelligent < 0){
@@ -94,16 +102,15 @@ var Square = Class.create(Sprite, {
     		}
     	}
     	if(AorC == ADULT){
-    		player.money += event_list[this.frame].adult;
+    		player.money += event_list[this.frame].adult * job_list[player.job].Bairitu;
+    		if(this.frame == PLUS_MASU || this.frame == MINUS_MASU){
+    			message.text += ("x" + job_list[player.job].Bairitu);
+    		}	
     		if(player.money < 0){
     			player.money = 0;
     		}
     	}
-		message.font = '20px 游明朝';
-    	message.text = event_list[this.frame].explain;
-    	message.x = (WIDTH/2) - message._boundWidth/2;
-    	message.y = (HEIGHT/2) - 20;
-
+		
     },
     output : function(){
 		console.log('x = ' + this.x);
@@ -414,6 +421,7 @@ window.onload = function(){
 	    	generation_message.text = "大人時代";
 	    	core.pushScene(jobSelect(Players));
 	    });
+
 
 	    //サイコロのタッチイベント
 	    saikoro.ontouchstart = function(){
